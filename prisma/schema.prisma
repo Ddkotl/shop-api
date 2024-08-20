@@ -24,7 +24,7 @@ model User {
   name    String @default("Не указано")
   picture String @default("/uploads/no-user-image.png")
 
-  store Store[]
+  stores Store[]
 
   favorites Product[]
   reviews   Review[]
