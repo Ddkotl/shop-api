@@ -49,7 +49,7 @@ export class AuthService {
     const user = await this.userServise.getById(result.id);
     const tokens = this.issueTokens(user.id);
 
-    return { user, ...tokens };
+    return { user, ...tokens } ;
   }
 
   issueTokens(userId: string) {
