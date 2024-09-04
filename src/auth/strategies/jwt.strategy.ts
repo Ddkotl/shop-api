@@ -7,17 +7,17 @@ import { UserService } from 'src/user/user.service';
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(
-    private configServise: ConfigService,
-    private userServise: UserService,
+    private configService: ConfigService,
+    private userService: UserService,
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: true,
-      secretOrKey: configServise.get('JWT_SECRET'),
+      secretOrKey: configService.get('JWT_SECRET'),
     });
   }
 
   async validate({ id }: { id: string }) {
-    return this.userServise.getById(id);
+    return this.userService.getById(id);
   }
 }

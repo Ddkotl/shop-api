@@ -12,7 +12,7 @@ export class AuthDto {
   email: string;
 
   @MinLength(6, {
-    message: 'Пароль должен содержать не менее 6 символов',
+    message: 'Пароль должен содержать не менее 6 символов!',
   })
   @IsString({
     message: 'Пароль обязателен',

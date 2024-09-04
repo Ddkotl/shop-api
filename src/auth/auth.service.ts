@@ -4,39 +4,40 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
+import { Response } from 'express';
 import { PrismaService } from 'src/prisma.service';
 import { UserService } from 'src/user/user.service';
 import { AuthDto } from './dto/auth.dto';
-import { Response } from 'express';
-import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AuthService {
   EXPIRE_DAY_REFRESH_TOKEN = 1;
   REFRESH_TOKEN_NAME = 'refreshToken';
+
   constructor(
     private jwt: JwtService,
-    private userServise: UserService,
+    private userService: UserService,
     private prisma: PrismaService,
     private configService: ConfigService,
   ) {}
 
   async login(dto: AuthDto) {
     const user = await this.validateUser(dto);
+
     const tokens = this.issueTokens(user.id);
 
     return { user, ...tokens };
   }
 
   async register(dto: AuthDto) {
-    const oldUser = await this.userServise.getByEmail(dto.email);
+    const oldUser = await this.userService.getByEmail(dto.email);
 
-    if (oldUser) {
-      throw new BadRequestException('Пользователь уже существует');
-    }
+    if (oldUser) throw new BadRequestException('Пользователь уже существует');
 
-    const user = await this.userServise.create(dto);
+    const user = await this.userService.create(dto);
+
     const tokens = this.issueTokens(user.id);
 
     return { user, ...tokens };
@@ -44,12 +45,10 @@ export class AuthService {
 
   async getNewTokens(refreshToken: string) {
     const result = await this.jwt.verifyAsync(refreshToken);
+    if (!result) throw new UnauthorizedException('Невалидный refresh токен');
 
-    if (!result) {
-      throw new UnauthorizedException('Неверный или просроченный токен');
-    }
+    const user = await this.userService.getById(result.id);
 
-    const user = await this.userServise.getById(result.id);
     const tokens = this.issueTokens(user.id);
 
     return { user, ...tokens };
@@ -66,24 +65,19 @@ export class AuthService {
       expiresIn: '7d',
     });
 
-    return {
-      accessToken,
-      refreshToken,
-    };
+    return { accessToken, refreshToken };
   }
 
   private async validateUser(dto: AuthDto) {
-    const user = await this.userServise.getByEmail(dto.email);
+    const user = await this.userService.getByEmail(dto.email);
 
-    if (!user) {
-      throw new NotFoundException('Пользователь не найден');
-    }
+    if (!user) throw new NotFoundException('Пользователь не найден');
 
     return user;
   }
 
   async validateOAuthLogin(req: any) {
-    let user = await this.userServise.getByEmail(req.user.email);
+    let user = await this.userService.getByEmail(req.user.email);
 
     if (!user) {
       user = await this.prisma.user.create({
@@ -111,7 +105,7 @@ export class AuthService {
 
     res.cookie(this.REFRESH_TOKEN_NAME, refreshToken, {
       httpOnly: true,
-      domain: this.configService.get<string>('SERVER_DOMAIN'),
+      domain: this.configService.get('SERVER_DOMAIN'),
       expires: expiresIn,
       secure: true,
       sameSite: 'none',
@@ -121,7 +115,7 @@ export class AuthService {
   removeRefreshTokenFromResponse(res: Response) {
     res.cookie(this.REFRESH_TOKEN_NAME, '', {
       httpOnly: true,
-      domain: this.configService.get<string>('SERVER_DOMAIN'),
+      domain: this.configService.get('SERVER_DOMAIN'),
       expires: new Date(0),
       secure: true,
       sameSite: 'none',

@@ -11,7 +11,26 @@ export class UserService {
   async getById(id: string) {
     const user = await this.prisma.user.findUnique({
       where: {
-        id: id,
+        id,
+      },
+      include: {
+        stores: true,
+        favorites: {
+          include: {
+            category: true,
+          },
+        },
+        orders: true,
+      },
+    });
+
+    return user;
+  }
+
+  async getByEmail(email: string) {
+    const user = await this.prisma.user.findUnique({
+      where: {
+        email,
       },
       include: {
         stores: true,
@@ -23,19 +42,25 @@ export class UserService {
     return user;
   }
 
-  async getByEmail(email: string) {
-    const user = await this.prisma.user.findUnique({
+  async toggleFavorite(productId: string, userId: string) {
+    const user = await this.getById(userId);
+
+    const isExists = user.favorites.some((product) => product.id === productId);
+
+    await this.prisma.user.update({
       where: {
-        email: email,
+        id: user.id,
       },
-      include: {
-        stores: true,
-        favorites: true,
-        orders: true,
+      data: {
+        favorites: {
+          [isExists ? 'disconnect' : 'connect']: {
+            id: productId,
+          },
+        },
       },
     });
 
-    return user;
+    return true;
   }
 
   async create(dto: AuthDto) {

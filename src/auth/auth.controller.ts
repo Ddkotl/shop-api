@@ -11,10 +11,10 @@ import {
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
+import { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { AuthDto } from './dto/auth.dto';
-import { Request, Response } from 'express';
-import { AuthGuard } from '@nestjs/passport';
 
 @Controller('auth')
 export class AuthController {
@@ -78,12 +78,12 @@ export class AuthController {
 
   @Get('google')
   @UseGuards(AuthGuard('google'))
-  async googleAuth(@Req() _req) {}
+  async googleAuth(@Req() req) {}
 
   @Get('google/callback')
   @UseGuards(AuthGuard('google'))
   async googleAuthCallback(
-    @Req() req: any,
+    @Req() req,
     @Res({ passthrough: true }) res: Response,
   ) {
     const { refreshToken, ...response } =
@@ -92,18 +92,18 @@ export class AuthController {
     this.authService.addRefreshTokenToResponse(res, refreshToken);
 
     return res.redirect(
-      `${process.env.CLIENT_URL}/dashboard?accessToken=${response.accessToken}`,
+      `${process.env['CLIENT_URL']}/dashboard?accessToken=${response.accessToken}`,
     );
   }
 
   @Get('yandex')
   @UseGuards(AuthGuard('yandex'))
-  async yandexAuth(@Req() _req) {}
+  async yandexAuth(@Req() req) {}
 
   @Get('yandex/callback')
   @UseGuards(AuthGuard('yandex'))
   async yandexAuthCallback(
-    @Req() req: any,
+    @Req() req,
     @Res({ passthrough: true }) res: Response,
   ) {
     const { refreshToken, ...response } =
@@ -112,7 +112,7 @@ export class AuthController {
     this.authService.addRefreshTokenToResponse(res, refreshToken);
 
     return res.redirect(
-      `${process.env.CLIENT_URL}/dashboard?accessToken=${response.accessToken}`,
+      `${process.env['CLIENT_URL']}/dashboard?accessToken=${response.accessToken}`,
     );
   }
 }
