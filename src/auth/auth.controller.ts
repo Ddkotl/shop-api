@@ -54,7 +54,6 @@ export class AuthController {
   ) {
     const refreshTokenFromCookies =
       req.cookies[this.authService.REFRESH_TOKEN_NAME];
-
     if (!refreshTokenFromCookies) {
       this.authService.removeRefreshTokenFromResponse(res);
       throw new UnauthorizedException('Refresh токен не прошел');
